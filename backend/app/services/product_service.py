@@ -13,8 +13,11 @@ def get_all_products(db: Session):
 def add_product(db: Session, product: ProductCreate):
     db_product = Product(
         name=product.name,
+        sku=product.sku,
+        category=product.category,
         price=product.price,
-        quantity=product.quantity
+        quantity=product.quantity,
+        low_stock_threshold=product.low_stock_threshold 
     )
 
     db.add(db_product)
@@ -47,10 +50,13 @@ def update_product(db: Session, product_id: int, updated_data: ProductUpdate):
 
     if product is None:
         return None
-
+    
     product.name = updated_data.name
+    product.sku = updated_data.sku
+    product.category = updated_data.category
     product.price = updated_data.price
     product.quantity = updated_data.quantity
+    product.low_stock_threshold = updated_data.low_stock_threshold
 
     db.commit()
     db.refresh(product)
