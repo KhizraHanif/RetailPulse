@@ -33,7 +33,7 @@ planned from June to August 2026.
 | Sprint | Focus | Dates | Status |
 |--------|-------|-------|--------|
 | Sprint 0 | Backend Foundation | Jun 11-24 | ✅ Complete |
-| Sprint 1 | Authentication | Jun 11-24 | 🔄 In Progress |
+| Sprint 1 | Authentication | Jun 11-24 | ✅ Complete|
 | Sprint 2 | Inventory + Sales | Jun 25-Jul 8 | ⬜ Planned |
 | Sprint 3 | Analytics + Frontend | Jul 9-22 | ⬜ Planned |
 | Sprint 4 | DevOps + Deployment | Jul 23-Aug 5 | ⬜ Planned |
