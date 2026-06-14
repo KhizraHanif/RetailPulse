@@ -1,0 +1,40 @@
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.models.user import User
+from app.schemas.user import UserCreate
+from app.core.security import hash_password, verify_password
+
+
+def get_user_by_email(db: Session, email: str):
+    statement = select(User).where(User.email == email)
+    result = db.execute(statement)
+    return result.scalars().first()
+
+
+def create_user(db: Session, user_data: UserCreate):
+    hashed_password = hash_password(user_data.password)
+
+    new_user = User(
+        name=user_data.name,
+        email=user_data.email,
+        hashed_password=hashed_password
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
+
+
+def authenticate_user(db: Session, email: str, password: str):
+    user = get_user_by_email(db, email)
+
+    if user is None:
+        return None
+
+    if not verify_password(password, user.hashed_password):
+        return None
+
+    return user
