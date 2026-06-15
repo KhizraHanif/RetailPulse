@@ -3,7 +3,7 @@
 A full-stack retail management system built with FastAPI, PostgreSQL and React, 
 managed using Agile/Scrum methodology.
 
-## 🚀 Tech Stack
+## Tech Stack
 
 **Backend**
 - FastAPI
@@ -38,7 +38,7 @@ planned from June to August 2026.
 | Sprint 3 | Analytics + Frontend | Jul 9-22 | ⬜ Planned |
 | Sprint 4 | DevOps + Deployment | Jul 23-Aug 5 | ⬜ Planned |
 
-## ✨ Features
+##  Features
 
 **Sprint 0 - Completed**
 - FastAPI project setup
@@ -73,7 +73,7 @@ planned from June to August 2026.
 - AWS deployment
 - Monitoring and logging
 
-## ⚙️ Local Setup
+##  Local Setup
 
 **1. Clone the repository**
 ```bash
@@ -95,7 +95,7 @@ pip install -r requirements.txt
 **4. Set up environment variables**
 ```bash
 cp .env.example .env
-# Edit .env with your database credentials
+#  your database credentials in .env
 ```
 
 **5. Run the application**
