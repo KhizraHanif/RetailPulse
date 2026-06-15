@@ -1,18 +1,18 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
+
 from app.core.security import get_current_user
 from app.database.session import get_db
-from app.schemas.product import ProductCreate,ProductUpdate, ProductResponse, StockUpdate
+from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, StockUpdate
 from app.services.product_service import (
     get_all_products,
     add_product,
     get_product_by_id,
     delete_product,
     update_product,
-    update_stock
+    update_stock as update_product_stock_service,
+    get_low_stock_products as get_low_stock_products_service
 )
-
-
 
 
 router = APIRouter(
@@ -21,24 +21,37 @@ router = APIRouter(
 )
 
 
-@router.get("/products", response_model=list[ProductResponse])
+@router.get("/", response_model=list[ProductResponse])
 def get_products(
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
-    print(current_user)
     return get_all_products(db)
 
 
-@router.post("/products", response_model=ProductResponse)
-def create_product(product: ProductCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    
+@router.post("/", response_model=ProductResponse)
+def create_product(
+    product: ProductCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     return add_product(db, product)
 
 
-@router.get("/products/{product_id}", response_model=ProductResponse)
-def get_product(product_id: int, db: Session = Depends(get_db), current_user  = Depends(get_current_user)):
-    current_user = Depends(get_current_user)
+@router.get("/low-stock", response_model=list[ProductResponse])
+def get_low_stock_inventory(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    return get_low_stock_products_service(db)
+
+
+@router.get("/{product_id}", response_model=ProductResponse)
+def get_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     product = get_product_by_id(db, product_id)
 
     if product is None:
@@ -47,13 +60,12 @@ def get_product(product_id: int, db: Session = Depends(get_db), current_user  = 
     return product
 
 
-@router.put("/products/{product_id}", response_model=ProductResponse)
+@router.put("/{product_id}", response_model=ProductResponse)
 def edit_product(
     product_id: int,
     product: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-
+    current_user=Depends(get_current_user)
 ):
     updated_product = update_product(db, product_id, product)
 
@@ -63,8 +75,12 @@ def edit_product(
     return updated_product
 
 
-@router.delete("/products/{product_id}")
-def remove_product(product_id: int, db: Session = Depends(get_db), current_user  = Depends(get_current_user)):
+@router.delete("/{product_id}")
+def remove_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     deleted = delete_product(db, product_id)
 
     if not deleted:
@@ -78,25 +94,19 @@ def update_product_stock(
     product_id: int,
     stock_update: StockUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
     try:
-        updated_product = update_stock(
+        updated_product = update_product_stock_service(
             db,
             product_id,
             stock_update.quantity_change
         )
 
         if updated_product is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Product not found"
-            )
+            raise HTTPException(status_code=404, detail="Product not found")
 
         return updated_product
 
     except ValueError as error:
-        raise HTTPException(
-            status_code=400,
-            detail=str(error)
-        )
+        raise HTTPException(status_code=400, detail=str(error))

@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductUpdate
 
@@ -84,3 +83,14 @@ def update_stock(db: Session, product_id: int, quantity_change: int):
     db.refresh(product)
 
     return product
+
+# low stock products are those at or below their threshold
+def get_low_stock_products(db: Session):
+    # Products at or below their threshold
+    statement = select(Product).where(
+        Product.quantity <= Product.low_stock_threshold
+    )
+
+    result = db.execute(statement)
+
+    return result.scalars().all()
