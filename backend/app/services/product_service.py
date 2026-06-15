@@ -62,3 +62,25 @@ def update_product(db: Session, product_id: int, updated_data: ProductUpdate):
     db.refresh(product)
 
     return product
+
+# update stock quantity
+def update_stock(db: Session, product_id: int, quantity_change: int):
+     # Find the product before applying any inventory changes.
+    product = get_product_by_id(db, product_id)
+
+    if product is None:
+        return None
+
+    new_quantity = product.quantity + quantity_change
+
+# Inventory should never go below zero.
+    if new_quantity < 0:
+         raise ValueError(
+             "Insufficient stock available"
+       )
+
+    product.quantity = new_quantity
+    db.commit()
+    db.refresh(product)
+
+    return product
