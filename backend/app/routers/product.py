@@ -1,20 +1,25 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.core.security import get_current_user
-
-from app.schemas.product import ProductCreate,ProductUpdate, ProductResponse
+from app.database.session import get_db
+from app.schemas.product import ProductCreate,ProductUpdate, ProductResponse, StockUpdate
 from app.services.product_service import (
     get_all_products,
     add_product,
     get_product_by_id,
     delete_product,
-    update_product
+    update_product,
+    update_stock
 )
-from app.database.session import get_db
 
 
 
-router = APIRouter()
+
+router = APIRouter(
+    prefix="/api/v1/products",
+    tags=["Products"]
+)
+
 
 @router.get("/products", response_model=list[ProductResponse])
 def get_products(
@@ -66,3 +71,32 @@ def remove_product(product_id: int, db: Session = Depends(get_db), current_user 
         raise HTTPException(status_code=404, detail="Product not found")
 
     return {"message": "Product deleted successfully"}
+
+
+@router.patch("/{product_id}/stock", response_model=ProductResponse)
+def update_product_stock(
+    product_id: int,
+    stock_update: StockUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    try:
+        updated_product = update_stock(
+            db,
+            product_id,
+            stock_update.quantity_change
+        )
+
+        if updated_product is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Product not found"
+            )
+
+        return updated_product
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
