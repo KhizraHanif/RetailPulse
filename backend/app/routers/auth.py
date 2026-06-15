@@ -11,7 +11,10 @@ from app.core.security import create_access_token
 
 #JWT (JSON Web Token) is a signed token used to identify a user without storing session data on the server.
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/api/v1/auth",
+    tags=["Authentication"]
+)
 
 
 @router.post("/register", response_model=UserResponse)
