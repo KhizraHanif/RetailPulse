@@ -4,21 +4,24 @@ from pydantic import BaseModel, Field
 
 
 class TaskCreate(BaseModel):
-    # Short title shown in the task list.
     title: str = Field(..., min_length=3, max_length=200)
+    description: str | None = Field(default=None, max_length=500)
+    category: str = Field(default="general", max_length=100)
 
-    # Additional information for warehouse staff.
-    description: str | None = None
+    # The manager chooses who will complete the task.
+    assigned_to_id: int = Field(..., gt=0)
 
-    # Optional grouping such as warehouse, supplier or urgent.
-    category: str = "general"
+    # Every inventory task must reference a valid product.
+    product_id: int = Field(..., gt=0)
 
 
 class TaskUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    category: str | None = None
+    title: str | None = Field(default=None, min_length=3, max_length=200)
+    description: str | None = Field(default=None, max_length=500)
+    category: str | None = Field(default=None, max_length=100)
     status: str | None = None
+    assigned_to_id: int | None = Field(default=None, gt=0)
+    product_id: int | None = Field(default=None, gt=0)
 
 
 class TaskResponse(BaseModel):
@@ -27,6 +30,11 @@ class TaskResponse(BaseModel):
     description: str | None
     status: str
     category: str
+
+    created_by_id: int
+    assigned_to_id: int
+    product_id: int
+
     created_at: datetime
     updated_at: datetime
 

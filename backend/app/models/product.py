@@ -4,8 +4,10 @@ from sqlalchemy import (
     String,
     Float,
     DateTime
+    
 )
-from datetime import datetime, timezone
+from sqlalchemy.orm import relationship
+from datetime import datetime, timezone 
 
 from app.database.connection import Base
 
@@ -64,3 +66,23 @@ class Product(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc)
     )
+
+    # ORM navigation: product.tasks and task.product
+    tasks = relationship(
+        "InventoryTask",
+        back_populates="product",
+        lazy="dynamic"
+    )
+
+    # Historical order lines that reference this product.
+    order_items = relationship(
+        "OrderItem",
+        back_populates="product"
+    )
+
+    inventory_movements = relationship(
+    "InventoryMovement",
+    back_populates="product"
+)
+    
+    

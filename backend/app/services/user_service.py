@@ -38,3 +38,33 @@ def authenticate_user(db: Session, email: str, password: str):
         return None
 
     return user
+
+def update_user_role(
+    db: Session,
+    user_id: int,
+    new_role: str,
+    current_user: User
+):
+    # Role management is restricted to store owners.
+    if current_user.role != "owner":
+        raise PermissionError(
+            "Only owners can change user roles"
+        )
+
+    user = db.get(User, user_id)
+
+    if user is None:
+        return None
+
+    # Prevent an owner from accidentally removing their own access.
+    if user.id == current_user.id and new_role != "owner":
+        raise ValueError(
+            "You cannot remove your own owner role"
+        )
+
+    user.role = new_role
+
+    db.commit()
+    db.refresh(user)
+
+    return user

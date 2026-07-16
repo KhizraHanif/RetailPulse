@@ -25,11 +25,24 @@ router = APIRouter(
 
 @router.get("/", response_model=list[TaskResponse])
 def get_tasks(
+    status: str | None = None,
+    category: str | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    return get_all_tasks(db)
+    try:
+        return get_all_tasks(
+            db=db,
+            current_user=current_user,
+            status=status,
+            category=category
+        )
 
+    except PermissionError as error:
+        raise HTTPException(
+            status_code=403,
+            detail=str(error)
+        )
 @router.get("/{task_id}", response_model=TaskResponse)
 def get_task(
     task_id: int,
@@ -49,7 +62,24 @@ def add_task(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    return create_task(db, task)
+    try:
+        return create_task(
+            db=db,
+            task=task,
+            current_user=current_user
+        )
+
+    except PermissionError as error:
+        raise HTTPException(
+            status_code=403,
+            detail=str(error)
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error)
+        )
 
 @router.put("/{task_id}", response_model=TaskResponse)
 def edit_task(

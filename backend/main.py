@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from app.routers import product, auth, task, user
 
 app = FastAPI()
 
@@ -29,3 +30,9 @@ def create_product(product: Product):
         "message": "Product added successfully",
         "product": product
     }
+
+# Include routers
+app.include_router(product.router)
+app.include_router(auth.router)
+app.include_router(task.router)
+app.include_router(user.router)
