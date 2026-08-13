@@ -1,107 +1,389 @@
-# RetailPulse 🛍️
+# RetailPulse
 
-A full-stack retail management system built with FastAPI, PostgreSQL and React, 
-managed using Agile/Scrum methodology.
+RetailPulse is a retail operations and inventory management application built with FastAPI and PostgreSQL.
+
+The backend currently supports authentication, role-based access control, product and inventory management, sales order processing, inventory audit history, low-stock background tasks, and cached dashboard summaries.
+
+The project is being developed incrementally using an Agile/Scrum workflow, with a React analytics dashboard and production deployment planned in later stages.
+
+## Current Architecture
+
+```text
+                         RetailPulse
+                              |
+                         FastAPI API
+                              |
+          +-------------------+-------------------+
+          |                   |                   |
+      PostgreSQL            Redis              Celery
+          |                   |                   |
+   Application Data     Dashboard Cache           |
+                                                  |
+                                              RabbitMQ
+```
+
+### PostgreSQL
+Stores persistent application data including:
+
+- users
+- products
+- inventory tasks
+- orders
+- order items
+- inventory movements
+
+### Redis
+Caches dashboard summary data to reduce repeated aggregate queries against PostgreSQL.
+
+The cache is invalidated when an order changes sales or inventory data.
+
+### RabbitMQ + Celery
+Handles background work outside the HTTP request cycle.
+
+The current background workflow processes low-stock events after successful order transactions.
+
+---
 
 ## Tech Stack
 
-**Backend**
+### Backend
+
+- Python
 - FastAPI
 - PostgreSQL
-- SQLAlchemy (ORM)
-- Pydantic (validation)
-- JWT Authentication
+- SQLAlchemy
+- Alembic
+- Pydantic
+- JWT authentication
+- bcrypt
 
-**Frontend** (Sprint 3)
-- React
-- Chart.js
-- Tailwind CSS
+### Background Processing
 
-**DevOps** (Sprint 4)
+- Celery
+- RabbitMQ
+
+### Caching
+
+- Redis
+
+### Infrastructure
+
 - Docker
-- GitHub Actions CI/CD
-- AWS (EC2, RDS, S3)
+- Docker Compose
 
-## 📊 Project Management (Jira)
+### Frontend — In Progress
 
-This project is managed using Agile/Scrum methodology with 4 sprints 
-planned from June to August 2026.
+- React
+- Tailwind CSS
+- Chart.js
 
-### Sprint Roadmap
-![Jira Timeline](docs/jira-timeline.png)
+### Planned Deployment
 
-| Sprint | Focus | Dates | Status |
-|--------|-------|-------|--------|
-| Sprint 0 | Backend Foundation | Jun 11-24 | ✅ Complete |
-| Sprint 1 | Authentication | Jun 11-24 | ✅ Complete|
-| Sprint 2 | Inventory + Sales | Jun 25-Jul 8 | ⬜ Planned |
-| Sprint 3 | Analytics + Frontend | Jul 9-22 | ⬜ Planned |
-| Sprint 4 | DevOps + Deployment | Jul 23-Aug 5 | ⬜ Planned |
+- GitHub Actions
+- AWS
 
-##  Features
+---
 
-**Sprint 0 - Completed**
-- FastAPI project setup
-- PostgreSQL database configuration
-- SQLAlchemy ORM models
-- Product CRUD APIs
-- Pydantic validation schemas
+## Features
 
-**Sprint 1 - In Progress**
-- User registration and login
-- Password hashing (bcrypt)
-- JWT token generation
-- Role-based authorization
-- Protected routes
+### Authentication and Authorization
 
-**Sprint 2 - Planned**
-- Inventory tracking
-- Stock adjustments
-- Low stock alerts
-- Sales management
-- Revenue calculations
+- User registration
+- User login
+- Password hashing
+- JWT access tokens
+- Protected API routes
+- Role-based access control
+- User roles for retail operations
 
-**Sprint 3 - Planned**
-- Analytics dashboard
-- Revenue charts
-- Product performance metrics
-- React frontend
+### Product and Inventory Management
 
-**Sprint 4 - Planned**
-- Docker containerization
-- GitHub Actions CI/CD
-- AWS deployment
-- Monitoring and logging
+- Create, read, update, and delete products
+- SKU support
+- Product categories
+- Stock quantity tracking
+- Low-stock thresholds
+- Inventory adjustments
+- Inventory movement history
+- Inventory task assignment
 
-##  Local Setup
+### Sales and Orders
 
-**1. Clone the repository**
+- Create sales orders
+- Multiple order items per order
+- Product validation before checkout
+- Stock availability validation
+- Automatic stock reduction
+- Order total calculation
+- Inventory movement creation for sales
+- Transaction rollback on database failure
+
+### Background Tasks
+
+- RabbitMQ message broker
+- Celery worker running through Docker
+- Low-stock task triggered after successful sales
+- Background task execution separated from API requests
+
+### Dashboard
+
+Current dashboard summary API provides:
+
+- total products
+- total stock
+- low-stock product count
+- total orders
+- total revenue
+
+Dashboard summaries are cached in Redis with a time-to-live (TTL).
+
+When an order is created, the existing dashboard cache is invalidated so the next request retrieves fresh values from PostgreSQL.
+
+---
+
+## Order Processing Flow
+
+```text
+Create Order Request
+        |
+        v
+Authenticate User
+        |
+        v
+Check User Role
+        |
+        v
+Validate Products
+        |
+        v
+Validate Available Stock
+        |
+        v
+Create Order + Order Items
+        |
+        v
+Reduce Product Stock
+        |
+        v
+Record Inventory Movements
+        |
+        v
+Commit PostgreSQL Transaction
+        |
+        +----------------------+
+        |                      |
+        v                      v
+Invalidate Redis       Check Low-Stock
+Dashboard Cache              Threshold
+                               |
+                               v
+                            Celery
+                               |
+                               v
+                           RabbitMQ
+                               |
+                               v
+                         Celery Worker
+```
+
+---
+
+## Dashboard Caching
+
+RetailPulse uses a cache-aside approach for dashboard summaries.
+
+```text
+Dashboard Request
+       |
+       v
+     Redis
+     /   \
+   HIT   MISS
+    |      |
+ Return  PostgreSQL
+           |
+           v
+      Calculate Summary
+           |
+           v
+       Store in Redis
+           |
+           v
+         Return
+```
+
+This avoids repeating the same aggregate database queries for every dashboard request.
+
+---
+
+## Database Migrations
+
+Database schema changes are managed with Alembic.
+
+Apply all migrations with:
+
+```bash
+alembic upgrade head
+```
+
+Check the current migration:
+
+```bash
+alembic current
+```
+
+The application does not create database tables automatically at startup. Schema changes should be made through Alembic migrations.
+
+---
+
+## Project Structure
+
+```text
+RetailPulse/
+│
+├── docker-compose.yml
+├── README.md
+│
+└── backend/
+    │
+    ├── Dockerfile
+    ├── requirements.txt
+    ├── alembic.ini
+    ├── alembic/
+    │
+    └── app/
+        ├── main.py
+        ├── core/
+        ├── database/
+        ├── models/
+        ├── routers/
+        ├── schemas/
+        ├── services/
+        └── tasks/
+```
+
+---
+
+## Local Development
+
+### 1. Clone the repository
+
 ```bash
 git clone https://github.com/KhizraHanif/RetailPulse.git
 cd RetailPulse
 ```
 
-**2. Create virtual environment**
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
+### 2. Create the backend virtual environment
 
-**3. Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-**4. Set up environment variables**
-```bash
-cp .env.example .env
-#  your database credentials in .env
-```
-
-**5. Run the application**
 ```bash
 cd backend
-uvicorn main:app --reload
+python -m venv venv
 ```
 
-**6. Access API docs**
+On Windows:
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+### 3. Install dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### 4. Configure environment variables
+
+Create:
+
+```text
+backend/.env
+```
+
+Configure the required database, authentication, RabbitMQ, and Redis settings.
+
+Do not commit `.env` to source control.
+
+### 5. Apply database migrations
+
+```bash
+alembic upgrade head
+```
+
+### 6. Start infrastructure services
+
+From the project root:
+
+```bash
+docker compose --env-file backend/.env up -d
+```
+
+This starts the current containerized infrastructure:
+
+- RabbitMQ
+- Redis
+- Celery worker
+
+### 7. Start FastAPI
+
+From `backend/`:
+
+```bash
+python -m uvicorn app.main:app --reload
+```
+
+### 8. Open the API documentation
+
+Once the backend is running, open the `/docs` endpoint in your browser.
+
+The Swagger interface can be used to test authentication, products, inventory tasks, orders, and dashboard endpoints.
+
+---
+
+## Development Roadmap
+
+| Stage | Focus | Status |
+|---|---|---|
+| Backend Foundation | FastAPI, PostgreSQL, SQLAlchemy, Alembic | Complete |
+| Authentication | JWT authentication and role-based access | Complete |
+| Inventory | Products, stock tracking, tasks, movements | Complete |
+| Sales | Orders, order items, stock updates | Complete |
+| Background Processing | RabbitMQ and Celery | Complete |
+| Caching | Redis dashboard caching and invalidation | Complete |
+| Analytics API | Sales and inventory analytics | In Progress |
+| Frontend | React analytics dashboard | Planned |
+| Testing | Automated backend and integration tests | Planned |
+| CI/CD | GitHub Actions | Planned |
+| Deployment | Production deployment | Planned |
+
+---
+
+## Planned Next Steps
+
+The next development stage will focus on:
+
+- sales and revenue analytics
+- top-selling product metrics
+- inventory analytics
+- dashboard chart endpoints
+- React dashboard integration
+- automated testing
+- CI/CD
+- production deployment
+
+---
+
+## Project Management
+
+Development is tracked using Jira with work divided into incremental backend, frontend, testing, and deployment stages.
+
+![Jira Timeline](docs/jira-timeline.png)
+
+---
+
+## Author
+
+**Khizra Hanif**
+
+MSc Computer Science  
+University of Victoria
