@@ -352,6 +352,7 @@ The Swagger interface can be used to test authentication, products, inventory ta
 | Caching | Redis dashboard caching and invalidation | Complete |
 | Analytics API | Sales and inventory analytics | In Progress |
 | Frontend | React analytics dashboard | Planned |
+| AI Analytics Assistant | LangChain natural-language retail analytics | Planned |
 | Testing | Automated backend and integration tests | Planned |
 | CI/CD | GitHub Actions | Planned |
 | Deployment | Production deployment | Planned |
@@ -372,6 +373,22 @@ The next development stage will focus on:
 - production deployment
 
 ---
+## AI Analytics Assistant — Planned
+
+RetailPulse will include a natural-language analytics interface for querying
+sales and inventory data.
+
+The assistant will allow users to ask questions such as:
+
+- Which products generated the most revenue this month?
+- Which products are currently below their stock threshold?
+- What were the best-selling products this week?
+- How have sales changed compared with the previous period?
+- Which products should be prioritized for restocking?
+
+The assistant will use LangChain to connect the language model with controlled
+application tools and retail data while keeping PostgreSQL as the source of
+truth.
 
 ## Project Management
 
