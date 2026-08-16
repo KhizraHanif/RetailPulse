@@ -1,29 +1,34 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db
 from app.core.security import get_current_user
+from app.database.session import get_db
 
 from app.schemas.task import (
     TaskCreate,
+    TaskResponse,
     TaskUpdate,
-    TaskResponse
 )
 
 from app.services.task_service import (
+    create_task,
+    delete_task,
     get_all_tasks,
     get_task_by_id,
-    create_task,
     update_task,
-    delete_task
 )
+
 
 router = APIRouter(
     prefix="/api/v1/tasks",
     tags=["Inventory Tasks"]
 )
 
-@router.get("/", response_model=list[TaskResponse])
+
+@router.get(
+    "/",
+    response_model=list[TaskResponse]
+)
 def get_tasks(
     status: str | None = None,
     category: str | None = None,
@@ -43,20 +48,43 @@ def get_tasks(
             status_code=403,
             detail=str(error)
         )
-@router.get("/{task_id}", response_model=TaskResponse)
+
+
+@router.get(
+    "/{task_id}",
+    response_model=TaskResponse
+)
 def get_task(
     task_id: int,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    task = get_task_by_id(db, task_id)
+    try:
+        task = get_task_by_id(
+            db=db,
+            task_id=task_id,
+            current_user=current_user
+        )
 
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
+        if task is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Task not found"
+            )
 
-    return task
+        return task
 
-@router.post("/", response_model=TaskResponse)
+    except PermissionError as error:
+        raise HTTPException(
+            status_code=403,
+            detail=str(error)
+        )
+
+
+@router.post(
+    "/",
+    response_model=TaskResponse
+)
 def add_task(
     task: TaskCreate,
     db: Session = Depends(get_db),
@@ -77,30 +105,49 @@ def add_task(
 
     except ValueError as error:
         raise HTTPException(
-            status_code=404,
+            status_code=400,
             detail=str(error)
         )
 
-@router.put("/{task_id}", response_model=TaskResponse)
+
+@router.put(
+    "/{task_id}",
+    response_model=TaskResponse
+)
 def edit_task(
     task_id: int,
     task: TaskUpdate,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    updated_task = update_task(
-        db,
-        task_id,
-        task
-    )
-
-    if updated_task is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Task not found"
+    try:
+        updated_task = update_task(
+            db=db,
+            task_id=task_id,
+            task=task,
+            current_user=current_user
         )
 
-    return updated_task
+        if updated_task is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Task not found"
+            )
+
+        return updated_task
+
+    except PermissionError as error:
+        raise HTTPException(
+            status_code=403,
+            detail=str(error)
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
+
 
 @router.delete("/{task_id}")
 def remove_task(
@@ -108,15 +155,25 @@ def remove_task(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    deleted = delete_task(db, task_id)
-
-    if not deleted:
-        raise HTTPException(
-            status_code=404,
-            detail="Task not found"
+    try:
+        deleted = delete_task(
+            db=db,
+            task_id=task_id,
+            current_user=current_user
         )
 
-    return {
-        "message": "Task deleted successfully"
-    }
+        if not deleted:
+            raise HTTPException(
+                status_code=404,
+                detail="Task not found"
+            )
 
+        return {
+            "message": "Task deleted successfully"
+        }
+
+    except PermissionError as error:
+        raise HTTPException(
+            status_code=403,
+            detail=str(error)
+        )

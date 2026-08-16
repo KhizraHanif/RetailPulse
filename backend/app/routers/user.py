@@ -1,16 +1,112 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+)
+
 from sqlalchemy.orm import Session
 
-from app.core.security import get_current_user
+from app.core.security import (
+    get_current_user,
+)
+
 from app.database.session import get_db
-from app.schemas.user import UserResponse, UserRoleUpdate
-from app.services.user_service import update_user_role
+
+from app.schemas.user import (
+    StaffUserCreate,
+    UserResponse,
+    UserRoleUpdate,
+)
+
+from app.services.user_service import (
+    create_staff_user,
+    get_all_users,
+    get_assignable_users,
+    update_user_role,
+)
 
 
 router = APIRouter(
     prefix="/api/v1/users",
     tags=["User Management"]
 )
+
+
+@router.get(
+    "/",
+    response_model=list[UserResponse]
+)
+def list_users(
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
+):
+    try:
+        return get_all_users(
+            db=db,
+            current_user=current_user
+        )
+
+    except PermissionError as error:
+        raise HTTPException(
+            status_code=403,
+            detail=str(error)
+        )
+
+
+@router.post(
+    "/",
+    response_model=UserResponse
+)
+def add_staff_user(
+    user_data: StaffUserCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
+):
+    try:
+        return create_staff_user(
+            db=db,
+            user_data=user_data,
+            current_user=current_user
+        )
+
+    except PermissionError as error:
+        raise HTTPException(
+            status_code=403,
+            detail=str(error)
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
+
+
+@router.get(
+    "/assignable",
+    response_model=list[UserResponse]
+)
+def list_assignable_users(
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
+):
+    try:
+        return get_assignable_users(
+            db=db,
+            current_user=current_user
+        )
+
+    except PermissionError as error:
+        raise HTTPException(
+            status_code=403,
+            detail=str(error)
+        )
 
 
 @router.patch(
@@ -21,7 +117,9 @@ def change_user_role(
     user_id: int,
     role_data: UserRoleUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(
+        get_current_user
+    )
 ):
     try:
         updated_user = update_user_role(

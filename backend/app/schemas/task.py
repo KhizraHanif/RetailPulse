@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -19,7 +19,11 @@ class TaskUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=200)
     description: str | None = Field(default=None, max_length=500)
     category: str | None = Field(default=None, max_length=100)
-    status: str | None = None
+    status: Literal[
+    "pending",
+    "in_progress",
+    "completed"
+] | None = None
     assigned_to_id: int | None = Field(default=None, gt=0)
     product_id: int | None = Field(default=None, gt=0)
 

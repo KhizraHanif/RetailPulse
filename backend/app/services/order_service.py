@@ -159,6 +159,23 @@ def create_order(
 
 
 
+def get_orders(
+    db: Session,
+    limit: int = 50
+):
+    result = db.execute(
+        select(Order)
+        .options(
+            selectinload(Order.items)
+        )
+        .order_by(
+            Order.created_at.desc()
+        )
+        .limit(limit)
+    )
+
+    return result.scalars().all()
+
 # TODO: Production hardening — implement the Transactional Outbox Pattern.
 # Currently the database transaction commits before the Celery task is
 # published to RabbitMQ. If RabbitMQ is unavailable after db.commit(),

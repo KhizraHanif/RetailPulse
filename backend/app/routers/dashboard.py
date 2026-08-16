@@ -49,6 +49,8 @@ def recent_movements(
         db=db,
         limit=limit
     )
+
+
 @router.get("/low-stock")
 def low_stock_products(
     limit: int = 10,
@@ -59,6 +61,7 @@ def low_stock_products(
         db=db,
         limit=limit
     )
+
 @router.get("/summary")
 def dashboard_summary(
     db: Session = Depends(get_db),

@@ -19,12 +19,26 @@ class ProductUpdate(BaseModel):
     quantity: int = Field(default=0, ge=0)
     low_stock_threshold: int = Field(default=5, ge=0)
 
+
+class ThresholdUpdate(BaseModel):
+    low_stock_threshold: int = Field(
+        ...,
+        ge=0
+    )
        # Positive value adds stock,
    
+
+
+
 # Negative value reduces stock, zero means no change
 
 class StockUpdate(BaseModel):
     quantity_change: int = Field(..., ne=0)
+
+    reason: str = Field(
+        default="Manual stock adjustment",
+        max_length=255
+    )
 
 
 

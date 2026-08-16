@@ -6,9 +6,14 @@ from app.database.session import get_db
 from app.schemas.user import UserCreate, UserResponse
 from app.services.user_service import get_user_by_email, create_user
 from app.schemas.user import UserLogin
-from app.services.user_service import authenticate_user
-from app.core.security import create_access_token
-
+from app.core.security import (
+    create_access_token,
+    get_current_user,
+)
+from app.services.user_service import (
+    authenticate_user,
+    create_initial_owner,
+)
 #JWT (JSON Web Token) is a signed token used to identify a user without storing session data on the server.
 
 router = APIRouter(
@@ -17,17 +22,35 @@ router = APIRouter(
 )
 
 
-@router.post("/register", response_model=UserResponse)
-def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
-    existing_user = get_user_by_email(db, user_data.email)
 
-    if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="Email already registered"
+@router.get(
+    "/me",
+    response_model=UserResponse
+)
+def get_me(
+    current_user=Depends(get_current_user)
+):
+    return current_user
+
+@router.post(
+    "/register",
+    response_model=UserResponse
+)
+def register_user(
+    user_data: UserCreate,
+    db: Session = Depends(get_db)
+):
+    try:
+        return create_initial_owner(
+            db=db,
+            user_data=user_data
         )
 
-    return create_user(db, user_data)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=403,
+            detail=str(error)
+        )
 
 @router.post("/login")
 def login(

@@ -2,6 +2,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductUpdate
+from redis.exceptions import RedisError
+
+from app.core.redis_client import redis_client
+from app.models.inventory_movement import InventoryMovement
 
 def get_all_products(db: Session):
     statement = select(Product)
@@ -63,24 +67,70 @@ def update_product(db: Session, product_id: int, updated_data: ProductUpdate):
     return product
 
 # update stock quantity
-def update_stock(db: Session, product_id: int, quantity_change: int):
-     # Find the product before applying any inventory changes.
-    product = get_product_by_id(db, product_id)
+def update_stock(
+    db: Session,
+    product_id: int,
+    quantity_change: int,
+    user_id: int,
+    reason: str
+):
+    product = get_product_by_id(
+        db,
+        product_id
+    )
 
     if product is None:
         return None
 
-    new_quantity = product.quantity + quantity_change
+    new_quantity = (
+        product.quantity
+        + quantity_change
+    )
 
-# Inventory should never go below zero.
     if new_quantity < 0:
-         raise ValueError(
-             "Insufficient stock available"
-       )
+        raise ValueError(
+            "Insufficient stock available"
+        )
 
     product.quantity = new_quantity
-    db.commit()
-    db.refresh(product)
+
+    movement_type = (
+        "restock"
+        if quantity_change > 0
+        else "adjustment"
+    )
+
+    movement = InventoryMovement(
+        product_id=product.id,
+        user_id=user_id,
+        movement_type=movement_type,
+        quantity_change=quantity_change,
+        reason=reason
+    )
+
+    db.add(movement)
+
+    try:
+        db.commit()
+        db.refresh(product)
+
+    except Exception:
+        db.rollback()
+        raise
+
+    # Redis is only a cache.
+    # A Redis failure should not undo
+    # a successful inventory update.
+    try:
+        redis_client.delete(
+            "dashboard:summary"
+        )
+
+    except RedisError as error:
+        print(
+            "Dashboard cache "
+            f"invalidation failed: {error}"
+        )
 
     return product
 
@@ -94,3 +144,33 @@ def get_low_stock_products(db: Session):
     result = db.execute(statement)
 
     return result.scalars().all()
+
+
+def update_low_stock_threshold(
+    db: Session,
+    product_id: int,
+    threshold: int
+):
+    product = get_product_by_id(
+        db,
+        product_id
+    )
+
+    if product is None:
+        return None
+
+    product.low_stock_threshold = threshold
+
+    db.commit()
+    db.refresh(product)
+
+    try:
+        redis_client.delete(
+            "dashboard:summary"
+        )
+    except RedisError as error:
+        print(
+            f"Cache invalidation failed: {error}"
+        )
+
+    return product

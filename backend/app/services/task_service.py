@@ -43,15 +43,38 @@ def get_all_tasks(
     return result.scalars().all()
 
 
-def get_task_by_id(db: Session, task_id: int):
-    """Return a single task or None if it doesn't exist."""
-    statement = select(InventoryTask).where(
-        InventoryTask.id == task_id
+def get_task_by_id(
+    db: Session,
+    task_id: int,
+    current_user: User
+):
+    task = db.get(
+        InventoryTask,
+        task_id
     )
 
-    result = db.execute(statement)
+    if task is None:
+        return None
 
-    return result.scalar_one_or_none()
+    if current_user.role in {
+        "owner",
+        "manager",
+    }:
+        return task
+
+    if (
+        current_user.role ==
+        "warehouse_staff"
+        and
+        task.assigned_to_id ==
+        current_user.id
+    ):
+        return task
+
+    raise PermissionError(
+        "You do not have permission "
+        "to view this task"
+    )
 
 
 def create_task(
@@ -69,6 +92,12 @@ def create_task(
 
     if assignee is None:
         raise ValueError("Assigned user not found")
+    if assignee.role != "warehouse_staff":
+        raise ValueError(
+        "Tasks must be assigned "
+        "to warehouse staff"
+    )
+    
 
     product = db.get(Product, task.product_id)
 
@@ -96,18 +125,94 @@ def create_task(
 def update_task(
     db: Session,
     task_id: int,
-    task: TaskUpdate
+    task: TaskUpdate,
+    current_user: User
 ):
-    """Update only the fields provided by the client."""
-    existing_task = get_task_by_id(db, task_id)
+    existing_task = db.get(
+        InventoryTask,
+        task_id
+    )
 
     if existing_task is None:
         return None
 
-    updates = task.model_dump(exclude_unset=True)
+    updates = task.model_dump(
+        exclude_unset=True
+    )
+
+    # Owner and manager may manage tasks.
+    if current_user.role in {
+        "owner",
+        "manager",
+    }:
+        if "assigned_to_id" in updates:
+            assignee = db.get(
+                User,
+                updates["assigned_to_id"]
+            )
+
+            if assignee is None:
+                raise ValueError(
+                    "Assigned user not found"
+                )
+
+            if (
+                assignee.role !=
+                "warehouse_staff"
+            ):
+                raise ValueError(
+                    "Tasks must be assigned "
+                    "to warehouse staff"
+                )
+
+        if "product_id" in updates:
+            product = db.get(
+                Product,
+                updates["product_id"]
+            )
+
+            if product is None:
+                raise ValueError(
+                    "Product not found"
+                )
+
+    # Warehouse workers can only change
+    # the status of their own task.
+    elif (
+        current_user.role ==
+        "warehouse_staff"
+    ):
+        if (
+            existing_task.assigned_to_id
+            != current_user.id
+        ):
+            raise PermissionError(
+                "This task is not assigned to you"
+            )
+
+        forbidden_fields = (
+            set(updates.keys())
+            - {"status"}
+        )
+
+        if forbidden_fields:
+            raise PermissionError(
+                "Warehouse staff can only "
+                "update task status"
+            )
+
+    else:
+        raise PermissionError(
+            "You do not have permission "
+            "to update inventory tasks"
+        )
 
     for field, value in updates.items():
-        setattr(existing_task, field, value)
+        setattr(
+            existing_task,
+            field,
+            value
+        )
 
     db.commit()
     db.refresh(existing_task)
@@ -115,9 +220,24 @@ def update_task(
     return existing_task
 
 
-def delete_task(db: Session, task_id: int):
-    """Delete a task if it exists."""
-    existing_task = get_task_by_id(db, task_id)
+def delete_task(
+    db: Session,
+    task_id: int,
+    current_user: User
+):
+    if current_user.role not in {
+        "owner",
+        "manager",
+    }:
+        raise PermissionError(
+            "Only managers or owners "
+            "can delete tasks"
+        )
+
+    existing_task = db.get(
+        InventoryTask,
+        task_id
+    )
 
     if existing_task is None:
         return False

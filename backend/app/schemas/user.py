@@ -9,7 +9,25 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
 
+class StaffUserCreate(BaseModel):
+    name: str = Field(
+        ...,
+        min_length=2,
+        max_length=100
+    )
 
+    email: EmailStr
+
+    password: str = Field(
+        ...,
+        min_length=8
+    )
+
+    role: Literal[
+        "manager",
+        "warehouse_staff",
+        "cashier"
+    ]
 class UserLogin(BaseModel):
     email: EmailStr
     password: str

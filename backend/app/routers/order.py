@@ -4,7 +4,10 @@ from sqlalchemy.orm import Session
 from app.core.security import get_current_user
 from app.database.session import get_db
 from app.schemas.order import OrderCreate, OrderResponse
-from app.services.order_service import create_order
+from app.services.order_service import (
+    create_order,
+    get_orders,
+)
 
 
 router = APIRouter(
@@ -37,3 +40,18 @@ def create_order_endpoint(
             status_code=400,
             detail=str(error)
         )
+
+
+@router.get(
+    "/",
+    response_model=list[OrderResponse]
+)
+def list_orders(
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    return get_orders(
+        db=db,
+        limit=limit
+    )
