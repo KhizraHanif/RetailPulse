@@ -10,7 +10,9 @@ from app.routers import (
     product,
     task,
     user,
+    analytics
 )
+
 
 
 app = FastAPI(
@@ -37,6 +39,7 @@ app.include_router(task.router)
 app.include_router(user.router)
 app.include_router(order.router)
 app.include_router(dashboard.router)
+app.include_router(analytics.router)
 
 
 @app.get("/")

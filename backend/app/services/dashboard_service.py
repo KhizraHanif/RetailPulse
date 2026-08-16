@@ -1,5 +1,5 @@
 import json
-
+from datetime import datetime, timedelta
 from sqlalchemy import func, select, cast, Date
 
 from sqlalchemy.orm import Session
@@ -105,29 +105,58 @@ def get_revenue_trend(
     db: Session,
     days: int = 7
 ):
+    cutoff_date = (
+        datetime.now()
+        - timedelta(days=days)
+    )
+
     rows = db.execute(
         select(
-            cast(Order.created_at, Date).label("date"),
-            func.count(Order.id).label("orders"),
-            func.sum(Order.total_amount).label("revenue")
+            cast(
+                Order.created_at,
+                Date
+            ).label("date"),
+
+            func.count(
+                Order.id
+            ).label("orders"),
+
+            func.sum(
+                Order.total_amount
+            ).label("revenue")
+        )
+        .where(
+            Order.created_at >= cutoff_date
         )
         .group_by(
-            cast(Order.created_at, Date)
+            cast(
+                Order.created_at,
+                Date
+            )
         )
         .order_by(
-            cast(Order.created_at, Date)
+            cast(
+                Order.created_at,
+                Date
+            )
         )
-        .limit(days)
     ).all()
 
     return [
         {
             "date": str(row.date),
-            "orders": int(row.orders),
-            "revenue": round(float(row.revenue), 2)
+            "orders": int(
+                row.orders
+            ),
+            "revenue": round(
+                float(row.revenue),
+                2
+            )
         }
         for row in rows
     ]
+
+
 def get_recent_movements(
     db: Session,
     limit: int = 10

@@ -274,12 +274,17 @@ function App() {
           />
 
 
-          <Route
-            path="/analytics"
-            element={
-              <AnalyticsPage />
-            }
-          />
+         <Route
+  path="/analytics"
+  element={
+    <AnalyticsPage
+      token={token}
+      onLogout={
+        handleLogout
+      }
+    />
+  }
+/>
 
 
           {/* Owner-only frontend route */}

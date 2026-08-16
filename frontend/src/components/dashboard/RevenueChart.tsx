@@ -12,6 +12,7 @@ import {
 
 import { Line } from "react-chartjs-2"
 
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -31,9 +32,9 @@ type RevenueTrendItem = {
 
 type RevenueChartProps = {
   data: RevenueTrendItem[]
+  days?: number
 }
-
-function RevenueChart({ data }: RevenueChartProps) {
+function RevenueChart({ data, days = 7 }: RevenueChartProps) {
   const chartData = {
     labels: data.map((item) => item.date),
 
@@ -97,7 +98,7 @@ function RevenueChart({ data }: RevenueChartProps) {
         </div>
 
         <span className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-          Last 7 days
+          Last {days} days
         </span>
       </div>
 
