@@ -1,8 +1,10 @@
 # RetailPulse
 
-RetailPulse is a retail operations and inventory management application built with FastAPI and PostgreSQL.
+RetailPulse
 
-The backend currently supports authentication, role-based access control, product and inventory management, sales order processing, inventory audit history, low-stock background tasks, and cached dashboard summaries.
+Retail operations, analytics, and decision-support platform built with FastAPI, React, PostgreSQL, Redis, Celery, RabbitMQ, LangChain, and Ollama.
+
+RetailPulse brings product management, inventory control, sales order processing, warehouse tasks, business analytics, and evidence-backed retail recommendations into one application.
 
 The project is being developed incrementally using an Agile/Scrum workflow, with a React analytics dashboard and production deployment planned in later stages.
 
