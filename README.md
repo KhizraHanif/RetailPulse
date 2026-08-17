@@ -12,7 +12,7 @@ The project is developed incrementally using an Agile/Scrum workflow and is curr
 
 ### Dashboard
 
-![RetailPulse Dashboard](docs/dashboard.png)
+![RetailPulse Dashboard](docs/Dashboard.png)
 
 The dashboard provides an operational overview of the store, including:
 
