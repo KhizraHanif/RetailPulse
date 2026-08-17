@@ -48,7 +48,7 @@ Product CRUD operations are handled through FastAPI service and router layers, w
 
 ### Inventory Management
 
-![RetailPulse Inventory](docs/inventory.png)
+![RetailPulse Inventory](docs/Inventory.png)
 
 Inventory can be increased or reduced while recording the reason for each stock change.
 
@@ -66,7 +66,7 @@ The backend prevents invalid stock operations and keeps inventory changes consis
 
 ### Warehouse Task Management
 
-![RetailPulse Tasks](docs/assigned-tasks.png)
+![RetailPulse Tasks](docs/Assigned-tasks.png)
 
 Owners and managers can create warehouse tasks and assign them to warehouse staff.
 
