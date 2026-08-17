@@ -10,7 +10,8 @@ from app.routers import (
     product,
     task,
     user,
-    analytics
+    analytics,
+    assistant,
 )
 
 
@@ -40,6 +41,7 @@ app.include_router(user.router)
 app.include_router(order.router)
 app.include_router(dashboard.router)
 app.include_router(analytics.router)
+app.include_router(assistant.router)
 
 
 @app.get("/")

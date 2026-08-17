@@ -9,7 +9,7 @@ import ProductPerformanceChart from "../components/analytics/ProductPerformanceC
 import SalesPerformanceChart from "../components/analytics/SalesPerformanceChart"
 import SignalsPanel from "../components/analytics/SignalsPanel"
 import WeekdaySalesChart from "../components/analytics/WeekdaySalesChart"
-
+import AnalyticsAssistant from "../components/analytics/AnalyticsAssistant"
 import { api } from "../services/api"
 
 
@@ -307,6 +307,16 @@ function AnalyticsPage({
 
           </div>
 
+          <div className="mt-6">
+
+  <AnalyticsAssistant
+    token={token}
+    days={days}
+    onLogout={onLogout}
+  />
+
+</div>
+
 
           <div className="mt-6 grid gap-6 xl:grid-cols-[2fr_1fr]">
 
@@ -325,7 +335,7 @@ function AnalyticsPage({
           </div>
 
 
-          <div className="mt-6 grid gap-6 xl:grid-cols-[2fr_1fr]">
+                   <div className="mt-6">
 
             <ProductPerformanceChart
               products={
@@ -351,6 +361,7 @@ function AnalyticsPage({
             />
 
           </div>
+
 
         </>
       )}
