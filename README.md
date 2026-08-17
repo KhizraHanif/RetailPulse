@@ -759,6 +759,15 @@ RetailPulse has been developed incrementally using Jira with work divided across
 
 ![Jira Timeline](docs/jira-timeline.png)
 
+## Demo
+
+▶️ **(docs/RetailPulse_demo.mp4)**
+
+
+[![RetailPulse Demo](docs/dashboard.png)](docs/RetailPulse_demo.mp4)
+
+---
+
 ---
 
 # Author
